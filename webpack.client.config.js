@@ -63,7 +63,7 @@ module.exports = {
   devServer: {
     contentBase: DIST_PATH,
     compress: true,
-    port: 3000,
+    port: 1337,
   },
   mode: 'development',
   plugins: [

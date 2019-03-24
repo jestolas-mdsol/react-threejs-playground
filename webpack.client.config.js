@@ -39,19 +39,6 @@ module.exports = {
           fallback: 'style-loader',
           use: [
             {
-              loader: 'css-loader',
-              options: {
-                modules: true,
-                import: true,
-                importLoaders: 1,
-                localIdentName: '[name]_[local]--[hash:base64:8]',
-                camelCase: true,
-                minimize: true,
-                sourceMap: true,
-                url: false,
-              },
-            },
-            {
               loader: 'postcss-loader',
               options: {
                 sourceMap: true,
@@ -79,6 +66,9 @@ module.exports = {
   },
   mode: 'development',
   plugins: [
-    new HtmlWebpackPlugin({ template: './src/client/index.html' })
+    new HtmlWebpackPlugin({ template: './src/client/index.html' }),
+    new ExtractTextPlugin({
+      filename: 'style__[hash].css',
+    }),
   ]
 }

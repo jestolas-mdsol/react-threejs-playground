@@ -3,40 +3,30 @@ import * as THREE from 'three';
 
 import styles from "./styles";
 
-// const Scene = ({ width, height }) => {
-
 class Scene extends Component {
-  // react16 state
-  // const [ctx, setCtx] = usetState(0);
-  // setCtx(this.canvas.getContext('webgl2'));
-
-  // console.log('canvas: ', this.canvas)
-
-  // const scene = new THREE.Scene();
-  // const renderer = new THREE.WebGLRenderer({ canvas: ctx,  });
-  // const camera = new THREE.PerspectiveCamera(
-  //   75,
-  //   width / height,
-  //   0.1,
-  //   1000
-  // )
-  // camera.position.z = 4
 
   constructor(props) {
     super(props);
 
     this.state = {
-      ctx: null
+      ctx: null,
+      renderer: null,
     }
   }
 
   componentDidMount() {
-    debugger
+    if (!this.state.ctx || !this.state.renderer) {
+      const ctx = this.canvas.getContext('webgl2');
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera()
+      const renderer = new THREE.WebGLRenderer({ canvas: this.canvas, context: ctx });
 
-    if (!this.state.ctx) {
-      this.setState({
-        ctx: this.canvas.getContext('webgl2')
-      })
+      // use custom shader in index.html
+      // const material = new THREE.ShaderMaterial({
+      //   vertexShader: do
+      // })
+
+      this.setState({ ctx, renderer });
     }
   }
 

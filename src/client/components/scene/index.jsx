@@ -1,6 +1,6 @@
 import React, { Component, useState } from 'react';
 import * as THREE from 'three';
-// import OrbitControls from 'three-orbitcontrols'; // fork of three-orbit-controls
+import OrbitControls from 'three-orbitcontrols'; // fork of three-orbit-controls
 
 import styles from './styles.scss';
 import keyCodes from '../../config/keyCodes';
@@ -30,17 +30,28 @@ class Scene extends Component {
     this.camera.position.z = 4;
 
     // CAMERA CONTROLS
-    // this.cameraControls = new OrbitControls(this.camera);
+    this.cameraControls = new OrbitControls(this.camera);
     // this.cameraControls.keys = {
     //   LEFT: 65,
     //   RIGHT: 68,
     //   UP: 87,
-    //   DOWN: 83,
+    //   DOWN: 83
     // };
-    // this.cameraControls.enableDamping = true;
-    // this.cameraControls.dampingFactor = 0.25;
-    // this.cameraControls.enableZoom = false;
-    // this.cameraControls.update();
+
+    this.cameraControls.mouseButtons = {
+      ORBIT: THREE.MOUSE.RIGHT,
+      PAN: THREE.MOUSE.LEFT,
+      ZOOM: THREE.MOUSE.MIDDLE,
+    }
+
+    this.cameraControls.enableDamping = true; // For that slippery Feeling
+    this.cameraControls.dampingFactor = 0.12; // Needs to call update on render loop
+    this.cameraControls.rotateSpeed = 0.08; // Rotate speed
+    this.cameraControls.autoRotate = false; // turn this guy to true for a spinning camera
+    this.cameraControls.autoRotateSpeed = 0.08; // 30
+    this.cameraControls.maxPolarAngle = Math.PI/2; // Don't let to go below the ground
+
+    // this.cameraControls.addEventListener('change', this.renderScene);
 
     // RENDERER
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, context: ctx, antialias: true });
@@ -50,6 +61,7 @@ class Scene extends Component {
     // FLOOR PLANE
     const plane = new THREE.PlaneGeometry(10, 10);
     const planeMaterial = new THREE.MeshBasicMaterial({ color: '#58da7b', side: THREE.DoubleSide });
+
     this.floor = new THREE.Mesh(plane, planeMaterial);
     this.floor.rotation.x = this.floorAngle;
     this.scene.add(this.floor);
@@ -72,12 +84,15 @@ class Scene extends Component {
     // this.canvas.addEventListener('mousedown', this.handleMouseDown);
     this.canvas.addEventListener('keydown', this.handleKeydown);
     this.canvas.addEventListener('keyup', this.handleKeyUp);
+    // this.cameraControls.addEventListener('change', this.renderScene);
 
     // OTHER VARIALBES (maybe move this to constructor)
     this.validKeyIsPressed = false; // not using component state to avoid unnecessary re-renders
     this.directionNames = Object.keys(keyCodes);
     this.cameraMovementDirection = null;
+    this.canvasIsFocused = false;
 
+    this.canvas.focus();
     this.start();
   }
 
@@ -96,17 +111,19 @@ class Scene extends Component {
   }
 
   animate = () => {
+    this.canvasIsFocused = this.canvas == document.activeElement;
+
     this.cubeWithLineSegments.rotation.x += 0.01;
     this.cubeWithLineSegments.rotation.y += 0.01;
     this.cubeMesh.rotation.x += 0.01;
     this.cubeMesh.rotation.y += 0.01;
 
+    // if (this.validKeyIsPressed) {
+    //   this.cameraControls.update();
+    //   // this.moveCamera()
+    // }
+    this.cameraControls.update();
     this.renderScene();
-
-    if (this.validKeyIsPressed) {
-      // this.cameraControls.update();
-      this.moveCamera()
-    }
     this.frameId = window.requestAnimationFrame(this.animate);
   }
 
@@ -115,29 +132,35 @@ class Scene extends Component {
   }
 
   // WIP - cahnge this to use OrbitControls if camara should follow an object
-  moveCamera = () => {
-    const direction = this.cameraMovementDirection;
-    const cameraVelocity = 0.1;
+  // moveCamera = () => {
+  //   const direction = this.cameraMovementDirection;
+  //   const cameraVelocity = 0.1;
+  //
+  //   switch (direction) {
+  //     case 'left':
+  //       this.camera.position.x -= cameraVelocity;
+  //       break;
+  //     case 'right':
+  //       this.camera.position.x += cameraVelocity;
+  //       break;
+  //     case 'up':
+  //       this.camera.position.z -= cameraVelocity;
+  //       break;
+  //     case 'down':
+  //       this.camera.position.z += cameraVelocity;
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // }
 
-    switch (direction) {
-      case 'left':
-        this.camera.position.x -= cameraVelocity;
-        break;
-      case 'right':
-        this.camera.position.x += cameraVelocity;
-        break;
-      case 'up':
-        this.camera.position.z -= cameraVelocity;
-        break;
-      case 'down':
-        this.camera.position.z += cameraVelocity;
-        break;
-      default:
-        break;
-    }
+  panOrTiltCamera = () => {
+    // pan or tilt camera
   }
 
   handleMouseMove = (e) => {
+    if (!this.canvasIsFocused) { return; }
+
     console.log('moving: ', e);
   }
 
@@ -151,6 +174,8 @@ class Scene extends Component {
   )
 
   handleKeydown = (e) => {
+    if (!this.canvasIsFocused) { return; }
+
     const keyDirection = this.keyDirection(e);
 
     if (!!keyDirection) {

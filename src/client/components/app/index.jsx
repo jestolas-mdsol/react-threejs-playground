@@ -20,7 +20,7 @@ class App extends Component {
     const { width, height } = this.state.clientDimensions;
     return(
       <div>
-        <h1>Help me, Obi-Wan Kenobi. You’re my only hope.</h1>
+        <h1>wasd to move, click canvas to look around, esc to unlock cursor</h1>
         <Scene width={width} height={height} />
       </div>
     )

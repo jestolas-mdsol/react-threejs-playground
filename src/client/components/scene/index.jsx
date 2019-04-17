@@ -6,10 +6,22 @@ import styles from './styles.scss';
 import keyCodes from '../../config/keycodes';
 
 class Scene extends Component {
+  constructor(props) {
+    super(props);
+
+    // constants
+    this.cameraVelocity = 0.1;
+    this.mouseSensitivity = 0.1;
+  }
+
   componentDidMount() {
     const ctx = this.canvas.getContext('webgl2');
     const canvasWidth = this.canvas.clientWidth;
     const canvasHeight = this.canvas.clientHeight;
+
+    // DOM API BINDS
+    this.canvas.requestPointerLock = this.canvas.requestPointerLock || this.canvas.mozRequestPointerLock;
+    document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
 
     // SCENE
     this.scene = new THREE.Scene();
@@ -47,11 +59,15 @@ class Scene extends Component {
     this.scene.add(this.cubeMesh);
     this.camera.lookAt(new THREE.Vector3(0, 1, 1)); // look at this.cubeMesh position
 
-    // CANVAS EVENT LISTENERS
+    // EVENT LISTENERS
     this.canvas.addEventListener('mousemove', this.handleMouseMove);
     // this.canvas.addEventListener('mousedown', this.handleMouseDown);
     this.canvas.addEventListener('keydown', this.handleKeydown);
     this.canvas.addEventListener('keyup', this.handleKeyUp);
+    document.addEventListener('pointerlockchange', (e) => { console.log('pointer lock changed: ', document.pointerLockElement, '\n', e) });
+    document.addEventListener('mozpointerlockchange', (e) => { console.log('pointer lock changed: ', document.pointerLockElement, '\n', e) });
+    document.addEventListener('pointerlockerror', (e) => { console.log('pointer lock error: ', e) });
+    document.addEventListener('mozpointerlockerror', (e) => { console.log('pointer lock error: ', e) });
 
     // MUTATING VARIALBES (maybe move this to constructor)
     this.validKeyIsPressed = false; // not using component state to avoid unnecessary re-renders
@@ -59,12 +75,20 @@ class Scene extends Component {
     this.cameraMovementDirections = {};
     this.canvasIsFocused = false;
 
-    this.canvas.focus();
+    // RUN INITIALIZER FUNCTIONS
+    // this.canvas.focus();
+    // this.canvas.requestPointerLock();
     this.start();
   }
 
   componentWillUnmount() {
     this.stop();
+  }
+
+  handleCanvasClick = (e) => {
+    // if (!this.canvasIsFocused) {
+    this.canvas.requestPointerLock();
+    // }
   }
 
   start = () => {
@@ -88,6 +112,7 @@ class Scene extends Component {
     if (this.validKeyIsPressed) {
       this.keyMoveCamera()
     }
+
     this.renderScene();
     this.frameId = window.requestAnimationFrame(this.animate);
   }
@@ -97,40 +122,19 @@ class Scene extends Component {
   }
 
   keyMoveCamera = () => {
-    const cameraVelocity = 0.1;
-
-    // switch (direction) {
-    //   case 'left':
-    //     this.camera.rotation.y -= cameraVelocity;
-    //     break;
-    //   case 'right':
-    //     this.camera.rotation.y += cameraVelocity;
-    //     break;
-    //   case 'up':
-    //     this.camera.position.x -= Math.sin(this.camera.rotation.y) * cameraVelocity;
-    //     this.camera.position.z += Math.cos(this.camera.rotation.y) * cameraVelocity;
-    //     break;
-    //   case 'down':
-    //     this.camera.position.x += Math.sin(this.camera.rotation.y) * cameraVelocity;
-    //     this.camera.position.z -= Math.cos(this.camera.rotation.y) * cameraVelocity;
-    //     break;
-    //   default:
-    //     break;
-    // }
-
     if (this.cameraMovementDirections['left']) {
-      this.camera.rotation.y -= cameraVelocity;
+      // this.camera.rotation.y -= this.cameraVelocity;
     }
     if (this.cameraMovementDirections['right']) {
-      this.camera.rotation.y += cameraVelocity;
+      // this.camera.rotation.y += this.cameraVelocity;
     }
     if (this.cameraMovementDirections['up']) {
-      this.camera.position.x -= Math.sin(this.camera.rotation.y) * cameraVelocity;
-      this.camera.position.z += Math.cos(this.camera.rotation.y) * cameraVelocity;
+      this.camera.position.x -= Math.sin(this.camera.rotation.y) * this.cameraVelocity;
+      this.camera.position.z += Math.cos(this.camera.rotation.y) * this.cameraVelocity;
     }
     if (this.cameraMovementDirections['down']) {
-      this.camera.position.x += Math.sin(this.camera.rotation.y) * cameraVelocity;
-      this.camera.position.z -= Math.cos(this.camera.rotation.y) * cameraVelocity;
+      this.camera.position.x += Math.sin(this.camera.rotation.y) * this.cameraVelocity;
+      this.camera.position.z -= Math.cos(this.camera.rotation.y) * this.cameraVelocity;
     }
   }
 
@@ -140,9 +144,25 @@ class Scene extends Component {
 
   handleMouseMove = (e) => {
     if (!this.canvasIsFocused) { return; }
-
-    console.log('moving: ', e);
-    // this.mouseLookCamera();
+    // console.log(e);
+    if (e.movementX < 0) {
+      // console.log('left');
+      this.camera.rotation.y -= this.cameraVelocity;
+    }
+    if (e.movementX > 0) {
+      // console.log('right');
+      this.camera.rotation.y += this.cameraVelocity;
+    }
+    if (e.movementY < 0) {
+      // console.log('up');
+      // #here #koko
+      this.camera.rotation.x -= Math.sin(this.camera.rotation.y) * this.cameraVelocity;
+      this.camera.rotation.z += Math.cos(this.camera.rotation.y) * this.cameraVelocity;
+    }
+    if (e.movementY > 0) {
+      // console.log('down');
+      // this.camera.rotation.x += this.cameraVelocity;
+    }
   }
 
   handleMouseDown = (e) => {
@@ -162,7 +182,10 @@ class Scene extends Component {
     if (!!keyDirection) {
       this.validKeyIsPressed = true;
       this.cameraMovementDirections[keyDirection] = true;
-    } else { return }
+    } else if (e.keyCode === 27) { // esc key
+      document.exitPointerLock();
+    }
+    else { return }
   }
 
   handleKeyUp = (e) => {
@@ -180,6 +203,7 @@ class Scene extends Component {
           id="stage"
           className={styles.canvas}
           ref={(canvas) => { this.canvas = canvas; }}
+          onClick={this.handleCanvasClick}
         />
       </div>
     )
